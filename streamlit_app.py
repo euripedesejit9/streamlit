@@ -24,8 +24,8 @@ def load_data():
     collection = get_collection()
 
     # DEBUG 1: Total de documentos
-    # total_docs = collection.count_documents({})
-    # st.write("📄 Total de documentos no MongoDB:", total_docs)
+    total_docs = collection.count_documents({})
+    st.write("📄 Total de documentos no MongoDB:", total_docs)
 
     # DEBUG 2: Documentos que começam com #F
     cursor = collection.find(
@@ -41,8 +41,8 @@ def load_data():
     else:
         st.info("⚠️ Nenhuma mensagem encontrada com prefixo '#F'.")
 
-    # if not rows:
-    #     return pd.DataFrame(columns=["message", "message_timestamp", "data", "descricao", "valor", "forma_pagamento"])
+    if not rows:
+        return pd.DataFrame(columns=["message", "message_timestamp", "data", "descricao", "valor", "forma_pagamento"])
 
     df = pd.DataFrame(rows)
     df["message_timestamp"] = pd.to_datetime(df["message_timestamp"])
