@@ -1,66 +1,89 @@
-import altair as alt
 import pandas as pd
+import altair as alt
 import streamlit as st
+from pymongo import MongoClient
 
-# Show the page title and description.
+# Configuração da página
 st.set_page_config(page_title="Dashboard Financeiro", page_icon="💲")
-st.title("💲 Dashboard Financeiro")
-st.write(
-    """
-    This app visualizes data from [The Movie Database (TMDB)](https://www.kaggle.com/datasets/tmdb/tmdb-movie-metadata).
-    It shows which movie genre performed best at the box office over the years. Just 
-    click on the widgets below to explore!
-    """
-)
+st.title("💲 Dashboard Financeiro via WhatsApp")
 
+# Conexão com MongoDB usando secrets
+@st.cache_resource
+def get_collection():
+    uri = st.secrets["mongodb"]["uri"]
+    db_name = st.secrets["mongodb"]["database"]
+    col_name = st.secrets["mongodb"]["collection"]
 
-# Load the data from a CSV. We're caching this so it doesn't reload every time the app
-# reruns (e.g. if the user interacts with the widgets).
+    client = MongoClient(uri)
+    db = client[db_name]
+    return db[col_name]
+
+# Carregar e tratar os dados
 @st.cache_data
 def load_data():
-    df = pd.read_csv("data/movies_genres_summary.csv")
+    collection = get_collection()
+    cursor = collection.find({"message": {"$regex": r"^#F"}}, {"_id": 0, "message", "message_timestamp"})
+    rows = list(cursor)
+
+    df = pd.DataFrame(rows)
+    df["message_timestamp"] = pd.to_datetime(df["message_timestamp"])
+    df["data"] = df["message_timestamp"].dt.date
+
+    # Parse das mensagens
+    def parse_message(msg):
+        partes = [p.strip() for p in msg.split("|")]
+        if len(partes) >= 5:
+            descricao = partes[1]
+            valor = partes[2].replace(",", ".")
+            forma_pagamento = partes[4]
+            try:
+                return descricao, float(valor), forma_pagamento
+            except:
+                return None, None, None
+        return None, None, None
+
+    df[["descricao", "valor", "forma_pagamento"]] = df["message"].apply(lambda x: pd.Series(parse_message(x)))
+    df = df.dropna(subset=["valor", "forma_pagamento"])
     return df
 
-
+# Carrega os dados
 df = load_data()
 
-# Show a multiselect widget with the genres using `st.multiselect`.
-genres = st.multiselect(
-    "Genres",
-    df.genre.unique(),
-    ["Action", "Adventure", "Biography", "Comedy", "Drama", "Horror"],
-)
+# 🎛 Filtros interativos
+st.sidebar.header("Filtros")
 
-# Show a slider widget with the years using `st.slider`.
-years = st.slider("Years", 1986, 2006, (2000, 2016))
+# Filtro por data
+min_data = df["data"].min()
+max_data = df["data"].max()
+data_inicio, data_fim = st.sidebar.date_input("Período", (min_data, max_data), min_value=min_data, max_value=max_data)
 
-# Filter the dataframe based on the widget input and reshape it.
-df_filtered = df[(df["genre"].isin(genres)) & (df["year"].between(years[0], years[1]))]
-df_reshaped = df_filtered.pivot_table(
-    index="year", columns="genre", values="gross", aggfunc="sum", fill_value=0
-)
-df_reshaped = df_reshaped.sort_values(by="year", ascending=False)
+# Filtro por forma de pagamento
+formas = sorted(df["forma_pagamento"].unique())
+formas_selecionadas = st.sidebar.multiselect("Forma de Pagamento", formas, default=formas)
 
+# Aplica filtros
+df_filtrado = df[
+    (df["data"].between(data_inicio, data_fim)) &
+    (df["forma_pagamento"].isin(formas_selecionadas))
+]
 
-# Display the data as a table using `st.dataframe`.
-st.dataframe(
-    df_reshaped,
-    use_container_width=True,
-    column_config={"year": st.column_config.TextColumn("Year")},
-)
+# Agrupa por dia
+df_grouped = df_filtrado.groupby("data")["valor"].sum().reset_index()
 
-# Display the data as an Altair chart using `st.altair_chart`.
-df_chart = pd.melt(
-    df_reshaped.reset_index(), id_vars="year", var_name="genre", value_name="gross"
-)
+# Tabela detalhada
+st.subheader("📋 Tabela de Gastos Filtrados")
+st.dataframe(df_filtrado[["data", "descricao", "valor", "forma_pagamento"]], use_container_width=True)
+
+# Gráfico de barras diário
+st.subheader("📊 Gastos Diários")
 chart = (
-    alt.Chart(df_chart)
-    .mark_line()
+    alt.Chart(df_grouped)
+    .mark_bar()
     .encode(
-        x=alt.X("year:N", title="Year"),
-        y=alt.Y("gross:Q", title="Gross earnings ($)"),
-        color="genre:N",
+        x=alt.X("data:T", title="Data"),
+        y=alt.Y("valor:Q", title="Total Gasto (R$)"),
+        tooltip=["data:T", "valor:Q"]
     )
-    .properties(height=320)
+    .properties(height=400)
 )
 st.altair_chart(chart, use_container_width=True)
