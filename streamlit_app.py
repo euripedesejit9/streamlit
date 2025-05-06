@@ -22,8 +22,14 @@ def get_collection():
 @st.cache_data
 def load_data():
     collection = get_collection()
-    cursor = collection.find({"message": {"$regex": r"^#F"}}, {"_id": 0, "message", "message_timestamp"})
+    cursor = collection.find(
+        {"message": {"$regex": r"^#F"}},
+        {"_id": 0, "message": 1, "message_timestamp": 1}
+    )
+    
     rows = list(cursor)
+    if not rows:
+        return pd.DataFrame(columns=["message", "message_timestamp", "data", "descricao", "valor", "forma_pagamento"])
 
     df = pd.DataFrame(rows)
     df["message_timestamp"] = pd.to_datetime(df["message_timestamp"])
@@ -48,6 +54,10 @@ def load_data():
 
 # Carrega os dados
 df = load_data()
+
+if df.empty:
+    st.warning("Nenhum dado encontrado com o padrão '#F' no MongoDB.")
+    st.stop()
 
 # 🎛 Filtros interativos
 st.sidebar.header("Filtros")
