@@ -37,7 +37,7 @@ def load_data():
     # st.write("🔍 Quantos com #F:", len(rows))
     if rows:
         continue
-    #     # st.write("📝 Exemplo de mensagens:", rows[:3])
+        # st.write("📝 Exemplo de mensagens:", rows[:3])
     else:
         st.info("⚠️ Nenhuma mensagem encontrada com prefixo '#F'.")
 
