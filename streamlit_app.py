@@ -24,8 +24,8 @@ def load_data():
     collection = get_collection()
 
     # DEBUG 1: Total de documentos
-    total_docs = collection.count_documents({})
-    st.write("📄 Total de documentos no MongoDB:", total_docs)
+    # total_docs = collection.count_documents({})
+    # st.write("📄 Total de documentos no MongoDB:", total_docs)
 
     # DEBUG 2: Documentos que começam com #F
     cursor = collection.find(
@@ -36,7 +36,7 @@ def load_data():
     rows = list(cursor)
     # st.write("🔍 Quantos com #F:", len(rows))
     if rows:
-        x = rows
+        pass
         # st.write("📝 Exemplo de mensagens:", rows[:3])
     else:
         st.info("⚠️ Nenhuma mensagem encontrada com prefixo '#F'.")
