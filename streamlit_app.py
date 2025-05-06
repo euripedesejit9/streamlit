@@ -35,11 +35,11 @@ def load_data():
 
     rows = list(cursor)
     # st.write("🔍 Quantos com #F:", len(rows))
-    if rows:
-        pass
-        # st.write("📝 Exemplo de mensagens:", rows[:3])
-    else:
-        st.info("⚠️ Nenhuma mensagem encontrada com prefixo '#F'.")
+    # if rows:
+    #     pass
+    #     # st.write("📝 Exemplo de mensagens:", rows[:3])
+    # else:
+    #     st.info("⚠️ Nenhuma mensagem encontrada com prefixo '#F'.")
 
     if not rows:
         return pd.DataFrame(columns=["message", "message_timestamp", "data", "descricao", "valor", "forma_pagamento"])
