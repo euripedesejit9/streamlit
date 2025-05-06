@@ -22,12 +22,24 @@ def get_collection():
 @st.cache_data
 def load_data():
     collection = get_collection()
+
+    # DEBUG 1: Total de documentos
+    total_docs = collection.count_documents({})
+    st.write("📄 Total de documentos no MongoDB:", total_docs)
+
+    # DEBUG 2: Documentos que começam com #F
     cursor = collection.find(
         {"message": {"$regex": r"^#F"}},
         {"_id": 0, "message": 1, "message_timestamp": 1}
     )
-    
+
     rows = list(cursor)
+    st.write("🔍 Quantos com #F:", len(rows))
+    if rows:
+        st.write("📝 Exemplo de mensagens:", rows[:3])
+    else:
+        st.info("⚠️ Nenhuma mensagem encontrada com prefixo '#F'.")
+
     if not rows:
         return pd.DataFrame(columns=["message", "message_timestamp", "data", "descricao", "valor", "forma_pagamento"])
 
