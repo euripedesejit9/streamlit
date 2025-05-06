@@ -28,12 +28,12 @@ def load_data():
     # st.write("📄 Total de documentos no MongoDB:", total_docs)
 
     # DEBUG 2: Documentos que começam com #F
-    # cursor = collection.find(
-    #     {"message": {"$regex": r"^#F"}},
-    #     {"_id": 0, "message": 1, "message_timestamp": 1}
-    # )
+    cursor = collection.find(
+        {"message": {"$regex": r"^#F"}},
+        {"_id": 0, "message": 1, "message_timestamp": 1}
+    )
 
-    # rows = list(cursor)
+    rows = list(cursor)
     # st.write("🔍 Quantos com #F:", len(rows))
     # if rows:
     #     continue
