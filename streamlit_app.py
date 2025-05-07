@@ -130,6 +130,42 @@ chart_diario = (
 
 st.altair_chart(chart_diario, use_container_width=True)
 
+# 📊 Gráfico de Gasto Acumulado com Meta
+st.subheader("📊 Gasto Acumulado (sem alimentação) com Meta")
+
+# Calcula valor acumulado
+df_grouped["valor_acumulado"] = df_grouped["valor"].cumsum()
+df_grouped["meta"] = meta_valor  # meta para cada dia, para exibir como linha horizontal
+
+# Gráfico de barras do acumulado
+chart_acumulado_barras = (
+    alt.Chart(df_grouped)
+    .mark_bar(color="steelblue", size=20)
+    .encode(
+        x=alt.X("data:T", title="Data"),
+        y=alt.Y("valor_acumulado:Q", title="Gasto Acumulado (R$)"),
+        tooltip=["data:T", "valor_acumulado:Q"]
+    )
+)
+
+# Define cor da linha de meta com base no valor final
+cor_meta = "red" if df_grouped["valor_acumulado"].iloc[-1] > meta_valor else "green"
+
+# Linha horizontal de meta
+linha_meta = (
+    alt.Chart(df_grouped)
+    .mark_rule(strokeWidth=2, color=cor_meta)
+    .encode(
+        y="meta:Q"
+    )
+)
+
+# Combina os dois gráficos
+chart_final = (chart_acumulado_barras + linha_meta).properties(height=400)
+
+# Exibe o gráfico
+st.altair_chart(chart_final, use_container_width=True)
+
 
 
 # 📋 Tabela de Gastos
