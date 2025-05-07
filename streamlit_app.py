@@ -154,8 +154,8 @@ chart_acumulado = (
 )
 
 # Adiciona a linha da meta com cor condicional
-meta_line_color = alt.Chart(df_acumulado).mark_rule(size=3, strokeDash=[5, 5]).encode(
-    y='meta:Q',
+meta_line_col = alt.Chart(df_acumulado).mark_rule(size=3, strokeDash=[5, 5]).encode(
+    y=alt.value(meta_valor),  # Meta é um valor fixo
     color=alt.condition(
         alt.datum.acumulado <= meta_valor,  # Se o acumulado for menor ou igual à meta
         alt.value("green"),  # Verde se dentro da meta
