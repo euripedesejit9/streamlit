@@ -132,6 +132,7 @@ chart_diario_meta = chart_diario + alt.Chart(pd.DataFrame({'meta': [meta_valor]}
 
 st.altair_chart(chart_diario_meta, use_container_width=True)
 
+
 # 📈 Gráfico de gastos acumulados com linha de meta que muda de cor
 st.subheader("📈 Acumulado Diário (sem alimentação)")
 
@@ -152,16 +153,26 @@ chart_acumulado = (
     .properties(height=400)
 )
 
-# Condicional para definir a cor da linha da meta (verde ou vermelho)
-meta_color = alt.condition(
-    alt.datum.acumulado <= meta_valor,
-    alt.color("green"),  # verde se o valor acumulado for menor ou igual à meta
-    alt.color("red")     # vermelho se o valor acumulado ultrapassar a meta
+# Adiciona a linha da meta com condicional de cor
+linea_meta = (
+    alt.Chart(pd.DataFrame({'meta': [meta_valor] * len(df_acumulado)}))
+    .mark_line(color="gray", strokeDash=[5, 5])  # linha pontilhada
+    .encode(
+        y='meta:Q'
+    )
 )
 
-# Linha constante da meta
-chart_acumulado_meta = chart_acumulado + alt.Chart(pd.DataFrame({'meta': [meta_valor]})).mark_rule(color=meta_color, size=3).encode(
-    y='meta:Q'
+# Verifica se o valor acumulado ultrapassou a meta e muda a cor da linha da meta
+meta_line_color = alt.Chart(df_acumulado).mark_rule(size=3).encode(
+    y='meta:Q',
+    color=alt.condition(
+        alt.datum.acumulado <= meta_valor,  # Se o acumulado for menor ou igual à meta
+        alt.value("green"),  # Verde se dentro da meta
+        alt.value("red")     # Vermelho se ultrapassar a meta
+    )
 )
 
-st.altair_chart(chart_acumulado_meta, use_container_width=True)
+# Combinando o gráfico de linha acumulada com a linha de meta
+chart_final = chart_acumulado + meta_line_color + linea_meta
+
+st.altair_chart(chart_final, use_container_width=True)
