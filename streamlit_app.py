@@ -155,8 +155,8 @@ chart_acumulado = (
 # Condicional para definir a cor da linha da meta (verde ou vermelho)
 meta_color = alt.condition(
     alt.datum.acumulado <= meta_valor,
-    alt.value("green"),  # verde se o valor acumulado for menor ou igual à meta
-    alt.value("red")     # vermelho se o valor acumulado ultrapassar a meta
+    alt.color("green"),  # verde se o valor acumulado for menor ou igual à meta
+    alt.color("red")     # vermelho se o valor acumulado ultrapassar a meta
 )
 
 # Linha constante da meta
