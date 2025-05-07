@@ -133,7 +133,7 @@ chart_diario_meta = chart_diario + alt.Chart(pd.DataFrame({'meta': [meta_valor]}
 st.altair_chart(chart_diario_meta, use_container_width=True)
 
 
-# 📈 Gráfico de gastos acumulados com linha de meta que muda de cor
+# 📈 Gráfico de barras acumulados com linha de meta que muda de cor
 st.subheader("📈 Acumulado Diário (sem alimentação)")
 
 # Ordena os dados e calcula o valor acumulado
@@ -141,10 +141,10 @@ df_sem_alimentacao = df_sem_alimentacao.sort_values("data")
 df_sem_alimentacao["acumulado"] = df_sem_alimentacao["valor"].cumsum()
 df_acumulado = df_sem_alimentacao[["data", "acumulado"]].drop_duplicates()
 
-# Gráfico de linha de gastos acumulados
+# Gráfico de barras de gastos acumulados
 chart_acumulado = (
     alt.Chart(df_acumulado)
-    .mark_line(point=True)
+    .mark_bar(size=20)  # Barras
     .encode(
         x=alt.X("data:T", title="Data"),
         y=alt.Y("acumulado:Q", title="Gasto Acumulado (R$)"),
@@ -153,17 +153,8 @@ chart_acumulado = (
     .properties(height=400)
 )
 
-# Adiciona a linha da meta com condicional de cor
-linea_meta = (
-    alt.Chart(pd.DataFrame({'meta': [meta_valor] * len(df_acumulado)}))
-    .mark_line(color="gray", strokeDash=[5, 5])  # linha pontilhada
-    .encode(
-        y='meta:Q'
-    )
-)
-
-# Verifica se o valor acumulado ultrapassou a meta e muda a cor da linha da meta
-meta_line_color = alt.Chart(df_acumulado).mark_rule(size=3).encode(
+# Adiciona a linha da meta com cor condicional
+meta_line_color = alt.Chart(df_acumulado).mark_rule(size=3, strokeDash=[5, 5]).encode(
     y='meta:Q',
     color=alt.condition(
         alt.datum.acumulado <= meta_valor,  # Se o acumulado for menor ou igual à meta
@@ -172,7 +163,16 @@ meta_line_color = alt.Chart(df_acumulado).mark_rule(size=3).encode(
     )
 )
 
-# Combinando o gráfico de linha acumulada com a linha de meta
+# Adiciona a linha da meta como um DataFrame com a meta fixa
+linea_meta = (
+    alt.Chart(pd.DataFrame({'meta': [meta_valor] * len(df_acumulado)}))
+    .mark_line(color="gray", strokeDash=[5, 5])  # Linha tracejada
+    .encode(
+        y='meta:Q'
+    )
+)
+
+# Combinando o gráfico de barras acumuladas com a linha da meta
 chart_final = chart_acumulado + meta_line_color + linea_meta
 
 st.altair_chart(chart_final, use_container_width=True)
