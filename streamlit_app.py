@@ -4,43 +4,36 @@ import streamlit as st
 from pymongo import MongoClient
 
 # Configuração da página
-st.set_page_config(page_title="Dashboard Financeiro", page_icon="💲")
-st.title("💲 Dashboard Financeiro via WhatsApp")
+st.set_page_config(page_title="Dashboard Financeiro", page_icon="💲", layout="wide")
 
-# Conexão com MongoDB usando secrets
+# Título e botão de recarregar
+col_titulo, col_botao = st.columns([4, 1])
+with col_titulo:
+    st.title("💲 Dashboard Financeiro via WhatsApp")
+with col_botao:
+    if st.button("🔄 Recarregar Dados"):
+        st.cache_data.clear()
+        st.experimental_rerun()
+
+# Conexão com MongoDB
 @st.cache_resource
 def get_collection():
     uri = st.secrets["mongodb"]["uri"]
     db_name = st.secrets["mongodb"]["database"]
     col_name = st.secrets["mongodb"]["collection"]
-
     client = MongoClient(uri)
     db = client[db_name]
     return db[col_name]
 
 # Carregar e tratar os dados
-@st.cache_data
+@st.cache_data(ttl=60)
 def load_data():
     collection = get_collection()
-
-    # DEBUG 1: Total de documentos
-    # total_docs = collection.count_documents({})
-    # st.write("📄 Total de documentos no MongoDB:", total_docs)
-
-    # DEBUG 2: Documentos que começam com #F
     cursor = collection.find(
         {"message": {"$regex": r"^#F"}},
         {"_id": 0, "message": 1, "message_timestamp": 1}
     )
-
     rows = list(cursor)
-    # st.write("🔍 Quantos com #F:", len(rows))
-    # if rows:
-    #     pass
-    #     # st.write("📝 Exemplo de mensagens:", rows[:3])
-    # else:
-    #     st.info("⚠️ Nenhuma mensagem encontrada com prefixo '#F'.")
-
     if not rows:
         return pd.DataFrame(columns=["message", "message_timestamp", "data", "descricao", "valor", "forma_pagamento"])
 
@@ -52,9 +45,9 @@ def load_data():
     def parse_message(msg):
         partes = [p.strip() for p in msg.split("|")]
         if len(partes) >= 5:
-            descricao = partes[1]
+            descricao = partes[1].lower()
             valor = partes[2].replace(",", ".")
-            forma_pagamento = partes[4]
+            forma_pagamento = partes[4].capitalize()
             try:
                 return descricao, float(valor), forma_pagamento
             except:
@@ -65,48 +58,74 @@ def load_data():
     df = df.dropna(subset=["valor", "forma_pagamento"])
     return df
 
-# Carrega os dados
+# Carrega dados
 df = load_data()
 
 if df.empty:
     st.warning("Nenhum dado encontrado com o padrão '#F' no MongoDB.")
     st.stop()
 
-# 🎛 Filtros interativos
+# Sidebar - filtros
 st.sidebar.header("Filtros")
-
-# Filtro por data
 min_data = df["data"].min()
 max_data = df["data"].max()
 data_inicio, data_fim = st.sidebar.date_input("Período", (min_data, max_data), min_value=min_data, max_value=max_data)
-
-# Filtro por forma de pagamento
-formas = sorted(df["forma_pagamento"].unique())
-formas_selecionadas = st.sidebar.multiselect("Forma de Pagamento", formas, default=formas)
+meta = st.sidebar.number_input("Valor da Meta (R$)", value=500.0, step=10.0)
 
 # Aplica filtros
-df_filtrado = df[
-    (df["data"].between(data_inicio, data_fim)) &
-    (df["forma_pagamento"].isin(formas_selecionadas))
-]
+df = df[(df["data"].between(data_inicio, data_fim))]
 
-# Agrupa por dia
-df_grouped = df_filtrado.groupby("data")["valor"].sum().reset_index()
+# Cálculos para cards
+total_gastos = df["valor"].sum()
+total_credito = df[df["forma_pagamento"] == "Credito"]["valor"].sum()
+total_debito = df[df["forma_pagamento"] == "Debito"]["valor"].sum()
+total_alimentacao = df[df["descricao"].str.contains("alimenta", case=False)]["valor"].sum()
 
-# Tabela detalhada
-st.subheader("📋 Tabela de Gastos Filtrados")
-st.dataframe(df_filtrado[["data", "descricao", "valor", "forma_pagamento"]], use_container_width=True)
+# Layout dos cards
+col1, col2, col3, col4, col5 = st.columns(5)
+col1.metric("💰 Total de Gastos", f"R$ {total_gastos:.2f}")
+col2.metric("💳 Crédito", f"R$ {total_credito:.2f}")
+col3.metric("💸 Débito", f"R$ {total_debito:.2f}")
+col4.metric("🍔 Alimentação", f"R$ {total_alimentacao:.2f}")
+col5.metric("🎯 Meta", f"R$ {meta:.2f}")
 
-# Gráfico de barras diário
-st.subheader("📊 Gastos Diários")
-chart = (
-    alt.Chart(df_grouped)
-    .mark_bar()
+# Remove alimentação
+df_sem_alimentacao = df[~df["descricao"].str.contains("alimenta", case=False)]
+
+# Gráfico de Gastos Diários
+st.subheader("📊 Gastos Diários (sem alimentação)")
+df_diario = df_sem_alimentacao.groupby("data")["valor"].sum().reset_index()
+
+chart_diario = (
+    alt.Chart(df_diario)
+    .mark_bar(size=25, color="#4C78A8")
     .encode(
         x=alt.X("data:T", title="Data"),
         y=alt.Y("valor:Q", title="Total Gasto (R$)"),
         tooltip=["data:T", "valor:Q"]
     )
-    .properties(height=400)
-)
-st.altair_chart(chart, use_container_width=True)
+    + alt.Chart(pd.DataFrame({"meta": [meta]})).mark_rule(color="red").encode(y='meta:Q')
+).properties(height=350)
+
+st.altair_chart(chart_diario, use_container_width=True)
+
+# Gráfico Acumulado
+st.subheader("📈 Acumulado Diário (sem alimentação)")
+df_diario["acumulado"] = df_diario["valor"].cumsum()
+
+chart_acumulado = (
+    alt.Chart(df_diario)
+    .mark_line(point=True, color="#F58518")
+    .encode(
+        x=alt.X("data:T", title="Data"),
+        y=alt.Y("acumulado:Q", title="Gasto Acumulado (R$)"),
+        tooltip=["data:T", "acumulado:Q"]
+    )
+    + alt.Chart(pd.DataFrame({"meta": [meta]})).mark_rule(color="red").encode(y='meta:Q')
+).properties(height=350)
+
+st.altair_chart(chart_acumulado, use_container_width=True)
+
+# Tabela
+st.subheader("📋 Tabela de Gastos")
+st.dataframe(df[["data", "descricao", "valor", "forma_pagamento"]].sort_values("data"), use_container_width=True)
