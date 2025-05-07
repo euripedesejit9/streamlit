@@ -132,12 +132,15 @@ chart_diario_meta = chart_diario + alt.Chart(pd.DataFrame({'meta': [meta_valor]}
 
 st.altair_chart(chart_diario_meta, use_container_width=True)
 
-# 📈 Gráfico de gastos acumulados
+# 📈 Gráfico de gastos acumulados com linha de meta que muda de cor
 st.subheader("📈 Acumulado Diário (sem alimentação)")
+
+# Ordena os dados e calcula o valor acumulado
 df_sem_alimentacao = df_sem_alimentacao.sort_values("data")
 df_sem_alimentacao["acumulado"] = df_sem_alimentacao["valor"].cumsum()
 df_acumulado = df_sem_alimentacao[["data", "acumulado"]].drop_duplicates()
 
+# Gráfico de linha de gastos acumulados
 chart_acumulado = (
     alt.Chart(df_acumulado)
     .mark_line(point=True)
@@ -147,11 +150,18 @@ chart_acumulado = (
         tooltip=["data:T", "acumulado:Q"]
     )
     .properties(height=400)
-    .mark_rule(y=meta_valor, color="red", size=3)  # Meta acumulada
 )
 
-st.altair_chart(chart_acumulado, use_container_width=True)
+# Condicional para definir a cor da linha da meta (verde ou vermelho)
+meta_color = alt.condition(
+    alt.datum.acumulado <= meta_valor,
+    alt.value("green"),  # verde se o valor acumulado for menor ou igual à meta
+    alt.value("red")     # vermelho se o valor acumulado ultrapassar a meta
+)
 
-# 📋 Tabela de Gastos
-st.subheader("📋 Tabela de Gastos Filtrados")
-st.dataframe(df_filtrado[["data", "descricao", "valor", "forma_pagamento"]], use_container_width=True)
+# Linha constante da meta
+chart_acumulado_meta = chart_acumulado + alt.Chart(pd.DataFrame({'meta': [meta_valor]})).mark_rule(color=meta_color, size=3).encode(
+    y='meta:Q'
+)
+
+st.altair_chart(chart_acumulado_meta, use_container_width=True)
