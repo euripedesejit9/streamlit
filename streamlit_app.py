@@ -85,7 +85,7 @@ col1.metric("💰 Total Gasto", f"R$ {total_gastos:,.2f}")
 col2.metric("📇 Crédito", f"R$ {total_credito:,.2f}")
 col3.metric("🏦 Débito", f"R$ {total_debito:,.2f}")
 
-col4, col5 = st.columns([1, 1])  # Ajuste para 2 colunas com larguras iguais
+col4, col5 = st.columns([1, 1, 1])  # Ajuste para 2 colunas com larguras iguais
 col4.metric("🍔 Alimentação", f"R$ {total_alimentacao:,.2f}")
 col5.metric("🎯 Meta", f"R$ {meta_valor:,.2f}")
 
