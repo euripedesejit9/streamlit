@@ -123,7 +123,7 @@ chart_diario = (
         tooltip=["data:T", "valor:Q"]
     )
     .properties(height=400)
-    .mark_rule(y=meta_valor / 30, color="red")  # Meta diária
+    .mark_rule(y=meta_valor / 30, color="red", size=3)  # Meta diária
 )
 
 st.altair_chart(chart_diario, use_container_width=True)
@@ -143,6 +143,7 @@ chart_acumulado = (
         tooltip=["data:T", "acumulado:Q"]
     )
     .properties(height=400)
+    .mark_rule(y=meta_valor, color="red", size=3)  # Meta acumulada
 )
 
 st.altair_chart(chart_acumulado, use_container_width=True)
