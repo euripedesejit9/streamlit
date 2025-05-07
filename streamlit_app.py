@@ -110,13 +110,10 @@ df_filtrado = df[
 # Remove alimentação
 df_sem_alimentacao = df_filtrado[~df_filtrado["descricao"].str.contains("alimenta", case=False, na=False)]
 
-# 📊 Gráfico de gastos diários com linha de meta
-st.subheader("📅 Gastos Diários (sem alimentação)")
-df_grouped = df_sem_alimentacao.groupby("data")["valor"].sum().reset_index()
-
-chart_diario = (
+st.subheader("📊 Gastos Diários")
+chart = (
     alt.Chart(df_grouped)
-    .mark_bar(size=20)  # Barras mais largas
+    .mark_bar()
     .encode(
         x=alt.X("data:T", title="Data"),
         y=alt.Y("valor:Q", title="Total Gasto (R$)"),
@@ -124,10 +121,7 @@ chart_diario = (
     )
     .properties(height=400)
 )
-
-
-
-
+st.altair_chart(chart, use_container_width=True)
 
 
 # 📋 Tabela de Gastos
