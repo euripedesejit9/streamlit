@@ -178,5 +178,5 @@ chart_final = chart_acumulado + meta_line_color + linea_meta
 st.altair_chart(chart_final, use_container_width=True)
 
 # 📋 Tabela de Gastos
- st.subheader("📋 Tabela de Gastos")
- st.dataframe(df_filtrado[["data", "descricao", "valor", "forma_pagamento"]], use_container_width=True)
+st.subheader("📋 Tabela de Gastos")
+st.dataframe(df_filtrado[["data", "descricao", "valor", "forma_pagamento"]], use_container_width=True)
