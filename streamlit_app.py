@@ -176,3 +176,4 @@ linea_meta = (
 chart_final = chart_acumulado + meta_line_color + linea_meta
 
 st.altair_chart(chart_final, use_container_width=True)
+
