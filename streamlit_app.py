@@ -110,7 +110,7 @@ df_filtrado = df[
 # Remove alimentação
 df_sem_alimentacao = df_filtrado[~df_filtrado["descricao"].str.contains("alimenta", case=False, na=False)]
 
-# 📊 Gráfico de gastos diários
+# 📊 Gráfico de gastos diários com linha de meta
 st.subheader("📅 Gastos Diários (sem alimentação)")
 df_grouped = df_sem_alimentacao.groupby("data")["valor"].sum().reset_index()
 
@@ -123,10 +123,14 @@ chart_diario = (
         tooltip=["data:T", "valor:Q"]
     )
     .properties(height=400)
-    .mark_rule(y=meta_valor / 30, color="red", size=3)  # Meta diária
 )
 
-st.altair_chart(chart_diario, use_container_width=True)
+# Adiciona linha constante da meta
+chart_diario_meta = chart_diario + alt.Chart(pd.DataFrame({'meta': [meta_valor]})).mark_rule(color="red", size=3).encode(
+    y='meta:Q'
+)
+
+st.altair_chart(chart_diario_meta, use_container_width=True)
 
 # 📈 Gráfico de gastos acumulados
 st.subheader("📈 Acumulado Diário (sem alimentação)")
