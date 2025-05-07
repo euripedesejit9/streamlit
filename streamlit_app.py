@@ -110,10 +110,16 @@ df_filtrado = df[
 # Remove alimentação
 df_sem_alimentacao = df_filtrado[~df_filtrado["descricao"].str.contains("alimenta", case=False, na=False)]
 
-st.subheader("📊 Gastos Diários")
-chart = (
+# 📊 Gráfico de gastos diários com linha de meta
+st.subheader("📅 Gastos Diários (sem alimentação)")
+
+# Agrupa os dados por data e soma os valores
+df_grouped = df_sem_alimentacao.groupby("data")["valor"].sum().reset_index()
+
+# Gráfico de barras de gastos diários
+chart_diario = (
     alt.Chart(df_grouped)
-    .mark_bar()
+    .mark_bar(size=20)  # Barras mais largas
     .encode(
         x=alt.X("data:T", title="Data"),
         y=alt.Y("valor:Q", title="Total Gasto (R$)"),
@@ -121,7 +127,20 @@ chart = (
     )
     .properties(height=400)
 )
-st.altair_chart(chart, use_container_width=True)
+
+# Adiciona a linha da meta com cor condicional
+meta_line_color = alt.Chart(df_grouped).mark_rule(size=3, strokeDash=[5, 5]).encode(
+    y=alt.value(meta_valor),  # Meta é um valor fixo
+    color=alt.condition(
+        alt.datum.valor <= meta_valor,  # Se o valor diário for menor ou igual à meta
+        alt.value("green"),  # Verde se dentro da meta
+        alt.value("red")     # Vermelho se ultrapassar a meta
+    )
+)
+
+
+st.altair_chart(chart_diario, use_container_width=True)
+
 
 
 # 📋 Tabela de Gastos
