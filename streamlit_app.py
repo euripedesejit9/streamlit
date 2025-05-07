@@ -76,7 +76,7 @@ if df.empty:
 total_gastos = df["valor"].sum()
 total_credito = df[df["forma_pagamento"] == "Credito"]["valor"].sum()
 total_debito = df[df["forma_pagamento"] == "Debito"]["valor"].sum()
-total_alimentacao = df[df["descricao"].str.contains("alimenta", case=False, na=False)]["valor"].sum()
+total_alimentacao = df[df["forma_pagamento"] == "Alimentacao"]["valor"].sum()
 meta_valor = 3600
 
 # 🎯 Cards com métricas (2 linhas para evitar sobreposição)
