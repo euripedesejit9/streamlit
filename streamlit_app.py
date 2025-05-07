@@ -13,7 +13,7 @@ with col_titulo:
 with col_botao:
     if st.button("🔄 Recarregar Dados"):
         st.cache_data.clear()
-        st.experimental_rerun()
+        st.rerun()
 
 # Conexão com MongoDB
 @st.cache_resource
